@@ -6,7 +6,7 @@
 2. Устройство шлёт в Blynk этот URL
 3. Blynk обновляет изображение в своем приложении
 
-
+![Принцип работы blynk_image_widget_server](https://github.com/dontsovcmc/blynk_image_widget_server/blob/master/assets/diag.png)
 
 Использование
 =============
