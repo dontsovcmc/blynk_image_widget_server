@@ -35,7 +35,7 @@ storage = {}
 
 
 # директория где размещены файлы. окончание с /
-image_folder = './'
+image_folder = ''
 
 # публичная ссылка на файл без имени файла. окончание с /
 public_url = ''
@@ -43,41 +43,40 @@ public_url = ''
 
 @app.route('/images', methods = ["POST"])
 def send_images():
-    print ('POST')
     t = time.time()
 
     blynk_token = request.headers.get('Blynk-Token')
-    print ('file len %d' % len(request.data))
+    app.logger.info('POST data len %d' % len(request.data))
     
     #need to unique url for refresh blynk widget
     fname = blynk_token + '_' + random_name(8) + '.jpg'
     
-    with open(image_folder + fname, "wb") as fh:
+    with open(image_folder + fname, 'wb') as fh:
         fh.write(request.data)
-        print ('file %s saved' % fname)
+        app.logger.info('File %s saved' % fname)
     
     # Удаляем предыдущий файл
     try:
         os.unlink(image_folder + storage[blynk_token])
-    except Exception, err:
+    except Exception as err:
         pass
+
     storage[blynk_token] = fname
 
-    print ('receive and save time {} s'.format(time.time() - t)) 
+    app.logger.debug('Receive and save time {} s'.format(time.time() - t)) 
     url = public_url + fname
     
-    print ('public url: ' + url)
+    app.logger.info('Public url: ' + url)
     return url
 
 
 @app.route('/images/<fname>', methods = ["GET"])
 def images(fname):
-    print ('get image:' + fname)
+    app.logger.info('get image:' + fname)
     try:
         return send_file(image_folder + fname, attachment_filename=fname)
     except Exception as e:
-        print (e)
-        return 'error'
+        app.logger.error(e)
 
 
 if __name__ == "__main__":
@@ -100,9 +99,11 @@ if __name__ == "__main__":
     parser.add_argument('--cert', default='certs/server_cer.pem', help='Certificate file')
     parser.add_argument('--tls', action='store_true', help='Use HTTPS TLS 1.2')
     parser.add_argument('--images', default='', help='Full path to images folder')
+    parser.add_argument('--debug', default=True, help='turn on logger')
     args = parser.parse_args()
 
-    print(args)
+    app.debug = args.debug
+    app.logger.info(args)
 
     if args.tls:
         context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
@@ -114,6 +115,5 @@ if __name__ == "__main__":
 
     image_folder = args.images
     public_url = 'http://' + args.host + ':' + str(args.port) + '/images/'
-    
     serving.run_simple(args.host, args.port, app, ssl_context=context)
 
